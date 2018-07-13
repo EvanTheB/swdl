@@ -3,13 +3,21 @@ from lark import Lark
 wdl_parser = Lark(r"""
     ?doc: workflow
 
-    workflow: "workflow" "{" input "}"
+    workflow: "workflow" "{" input? (declaration|call)* output? "}"
 
-    input: "input" "{" declaration* "}"
+    input:  "input" "{" opt_declaration* "}"
+    
+    output: "output" "{" declaration* "}"
 
-    declaration: type NAME ("=" expression)?
+    call: "call" NAME [ "{" "input:" variable_mapping* "}" ]
+
+    variable_mapping: NAME "=" expression
+
+    opt_declaration: type NAME ["=" expression]?
+    declaration: type NAME "=" expression
 
     expression: value
+        | NAME
 
     type: "Int"    -> type_int
         | "Float"  -> type_float
@@ -35,6 +43,12 @@ wdl_parser = Lark(r"""
 
 print(wdl_parser.parse(r'''workflow { input { Int abc } }''').pretty())
 print(wdl_parser.parse(r'''workflow { input { String abc = 1 } }''').pretty())
+print(wdl_parser.parse(r'''workflow { input { String abc = 1 }
+    Int abc = false
+    call xyz
+    Int abc = def
+    call xyz {input: a = "a"}
+ }''').pretty())
 
 from lark import Transformer
 
