@@ -1,18 +1,20 @@
 from lark import Lark
 
 wdl_parser = Lark(r"""
-    ?doc: workflow
+    ?doc: workflow task*
 
     workflow: "workflow" "{" input? (declaration|call)* output? "}"
+    task: "task" "{" input? declaration* command declaration* output? "}"
 
-    input:  "input" "{" opt_declaration* "}"
-    
+    input: "input" "{" opt_declaration* "}"
     output: "output" "{" declaration* "}"
 
     call: "call" NAME [ "{" "input:" variable_mapping* "}" ]
-
     variable_mapping: NAME "=" expression
 
+    command: "command" something
+    something: /<<<.*?>>>/s
+    
     opt_declaration: type NAME ["=" expression]?
     declaration: type NAME "=" expression
 
@@ -39,16 +41,36 @@ wdl_parser = Lark(r"""
     %import common.WS
     %ignore WS
 
-    """, start='doc')
+    """, start='doc', ambiguity="explicit")
 
 print(wdl_parser.parse(r'''workflow { input { Int abc } }''').pretty())
 print(wdl_parser.parse(r'''workflow { input { String abc = 1 } }''').pretty())
+
 print(wdl_parser.parse(r'''workflow { input { String abc = 1 }
     Int abc = false
     call xyz
     Int abc = def
     call xyz {input: a = "a"}
  }''').pretty())
+
+print(wdl_parser.parse(r'''workflow {}
+task {
+    command <<< >>>
+}
+task {
+    command <<<
+    xyz abc
+
+    xyz abc
+    >>>
+}
+    ''').pretty())
+
+print(wdl_parser.parse(r'''workflow {}
+task {
+    command <<< > >> >>>
+}''').pretty())
+
 
 from lark import Transformer
 
