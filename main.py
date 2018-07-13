@@ -1,7 +1,23 @@
 from lark import Lark
 
 wdl_parser = Lark(r"""
-    ?value: string
+    ?doc: workflow
+
+    workflow: "workflow" "{" input "}"
+
+    input: "input" "{" declaration* "}"
+
+    declaration: type NAME ("=" expression)?
+
+    expression: value
+
+    type: "Int"    -> type_int
+        | "Float"  -> type_float
+        | "Boolean"  -> type_boolean
+        | "String"  -> type_string
+        | "File"  -> type_file
+
+    value:  string
           | SIGNED_NUMBER      -> number
           | "true"             -> true
           | "false"            -> false
@@ -11,16 +27,14 @@ wdl_parser = Lark(r"""
 
     %import common.ESCAPED_STRING
     %import common.SIGNED_NUMBER
+    %import common.CNAME -> NAME
     %import common.WS
     %ignore WS
 
-    """, start='value')
+    """, start='doc')
 
-print(wdl_parser.parse('"abc"'))
-print(wdl_parser.parse('13'))
-print(wdl_parser.parse('13.3'))
-print(wdl_parser.parse('true'))
-print(wdl_parser.parse('false'))
+print(wdl_parser.parse(r'''workflow { input { Int abc } }''').pretty())
+print(wdl_parser.parse(r'''workflow { input { String abc = 1 } }''').pretty())
 
 from lark import Transformer
 
@@ -33,5 +47,5 @@ class WDLTransformer(Transformer):
     true = lambda self, _: True
     false = lambda self, _: False
 
-print(WDLTransformer().transform(wdl_parser.parse('13.1')))
+#print(WDLTransformer().transform(wdl_parser.parse('13.1')))
 
