@@ -10,7 +10,7 @@ wdl_parser = Lark(r"""
     input: "input" "{" opt_declaration* "}"
     output: "output" "{" declaration* "}"
 
-    call: "call" NAME [ "{" "input" variable_mapping* "}" ]
+    call: "call" NAME [ "{" "input" "{" variable_mapping* "}" "}" ]
     variable_mapping: NAME "=" expression
 
     scatter: "scatter" "(" NAME "in" expression ")" "{" workflow_block* "}"
