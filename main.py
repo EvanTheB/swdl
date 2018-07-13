@@ -1,7 +1,7 @@
 from lark import Lark
 
 wdl_parser = Lark(r"""
-    ?doc: workflow task*
+    ?doc: task* workflow task*
 
     workflow: "workflow" "{" input? (declaration|call)* output? "}"
     task: "task" "{" input? declaration* command declaration* output? "}"
@@ -12,22 +12,50 @@ wdl_parser = Lark(r"""
     call: "call" NAME [ "{" "input:" variable_mapping* "}" ]
     variable_mapping: NAME "=" expression
 
-    command: "command" something
-    something: /<<<.*?>>>/s
+    command: "command" /<<<.*?>>>/s
     
     opt_declaration: type NAME ["=" expression]?
     declaration: type NAME "=" expression
 
-    expression: value
+    expression: "(" expression ")"
+        | expression "." expression
+        | expression "[" expression "]"
+        | expression "(" (expression ( "," expression )*)? ")"
+        | "!" expression
+        | "+" expression
+        | "-" expression
+        | "if" expression "then" expression "else" expression
+        | expression "*" expression
+        | expression "%" expression
+        | expression "/" expression
+        | expression "+" expression
+        | expression "-" expression
+        | expression "<" expression
+        | expression "<=" expression
+        | expression ">" expression
+        | expression ">=" expression
+        | expression "==" expression
+        | expression "!=" expression
+        | expression "&&" expression
+        | expression "||" expression
+        | "{" ( expression ":" expression ( "," expression ":" expression )*)? "}"
+        | "[" expression* "]"
+        | literal
         | NAME
 
-    type: "Int"    -> type_int
+    type: actual_type "?"?
+    
+    actual_type: "Int"    -> type_int
         | "Float"  -> type_float
         | "Boolean"  -> type_boolean
         | "String"  -> type_string
         | "File"  -> type_file
+        | "Array" "[" type "]" "+"? -> type_array
+        | "Map" "[" type "," type "]" "+"? -> type_map
 
-    value:  string
+
+
+    literal:  string
           | SIGNED_NUMBER      -> number
           | "true"             -> true
           | "false"            -> false
