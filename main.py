@@ -18,48 +18,45 @@ wdl_parser = Lark(r"""
     declaration: type NAME "=" expression
 
     expression: "(" expression ")"
-        | expression "." expression
-        | expression "[" expression "]"
-        | expression "(" (expression ( "," expression )*)? ")"
-        | "!" expression
-        | "+" expression
-        | "-" expression
-        | "if" expression "then" expression "else" expression
-        | expression "*" expression
-        | expression "%" expression
-        | expression "/" expression
-        | expression "+" expression
-        | expression "-" expression
-        | expression "<" expression
-        | expression "<=" expression
-        | expression ">" expression
-        | expression ">=" expression
-        | expression "==" expression
-        | expression "!=" expression
-        | expression "&&" expression
-        | expression "||" expression
-        | "{" ( expression ":" expression ( "," expression ":" expression )*)? "}"
-        | "[" expression* "]"
-        | literal
-        | NAME
+              | expression "." expression
+              | expression "[" expression "]"
+              | expression "(" (expression ( "," expression )*)? ")"
+              | "!" expression
+              | "+" expression
+              | "-" expression
+              | "if" expression "then" expression "else" expression
+              | expression "*" expression
+              | expression "%" expression
+              | expression "/" expression
+              | expression "+" expression
+              | expression "-" expression
+              | expression "<" expression
+              | expression "<=" expression
+              | expression ">" expression
+              | expression ">=" expression
+              | expression "==" expression
+              | expression "!=" expression
+              | expression "&&" expression
+              | expression "||" expression
+              | "{" ( expression ":" expression ( "," expression ":" expression )*)? "}"
+              | "[" expression* "]"
+              | literal
+              | NAME
 
     type: actual_type "?"?
     
-    actual_type: "Int"    -> type_int
-        | "Float"  -> type_float
-        | "Boolean"  -> type_boolean
-        | "String"  -> type_string
-        | "File"  -> type_file
-        | "Array" "[" type "]" "+"? -> type_array
-        | "Map" "[" type "," type "]" "+"? -> type_map
+    actual_type: "Int"                            -> type_int
+               | "Float"                          -> type_float
+               | "Boolean"                        -> type_boolean
+               | "String"                         -> type_string
+               | "File"                           -> type_file
+               | "Array" "[" type "]" "+"?        -> type_array
+               | "Map" "[" type "," type "]" "+"? -> type_map
 
-
-
-    literal:  string
-          | SIGNED_NUMBER      -> number
-          | "true"             -> true
-          | "false"            -> false
-
+    literal: string
+           | SIGNED_NUMBER      -> number
+           | "true"             -> true
+           | "false"            -> false
 
     string : ESCAPED_STRING
 
@@ -70,35 +67,6 @@ wdl_parser = Lark(r"""
     %ignore WS
 
     """, start='doc', ambiguity="explicit")
-
-print(wdl_parser.parse(r'''workflow { input { Int abc } }''').pretty())
-print(wdl_parser.parse(r'''workflow { input { String abc = 1 } }''').pretty())
-
-print(wdl_parser.parse(r'''workflow { input { String abc = 1 }
-    Int abc = false
-    call xyz
-    Int abc = def
-    call xyz {input: a = "a"}
- }''').pretty())
-
-print(wdl_parser.parse(r'''workflow {}
-task {
-    command <<< >>>
-}
-task {
-    command <<<
-    xyz abc
-
-    xyz abc
-    >>>
-}
-    ''').pretty())
-
-print(wdl_parser.parse(r'''workflow {}
-task {
-    command <<< > >> >>>
-}''').pretty())
-
 
 from lark import Transformer
 
@@ -112,4 +80,8 @@ class WDLTransformer(Transformer):
     false = lambda self, _: False
 
 #print(WDLTransformer().transform(wdl_parser.parse('13.1')))
+
+import tests
+for t in tests.t:
+    print(wdl_parser.parse(t).pretty())
 
