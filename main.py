@@ -17,7 +17,7 @@ wdl_parser = Lark(r"""
 
     command: "command" /<<<.*?>>>/s
     runtime: "runtime" "{" variable_mapping* "}"
-    
+
     opt_declaration: type NAME ["=" expression]?
     declaration: type NAME "=" expression
 
@@ -48,7 +48,6 @@ wdl_parser = Lark(r"""
               | NAME
 
     type: actual_type "?"?
-    
     actual_type: "Int"                            -> type_int
                | "Float"                          -> type_float
                | "Boolean"                        -> type_boolean
@@ -62,15 +61,16 @@ wdl_parser = Lark(r"""
            | "true"             -> true
            | "false"            -> false
 
-    string : ESCAPED_STRING
+    string: "\"" string_part* "\""
+    string_part: /[^"~]+/
+        | "~{" expression "}"
+        | /~(?!{)/
 
     %import common.ESCAPED_STRING
     %import common.SIGNED_NUMBER
     %import common.CNAME -> NAME
     %import common.WS
-    COMMENT: /#.*/
     %ignore WS
-    %ignore COMMENT
 
     """, start='doc', ambiguity="explicit")
 
