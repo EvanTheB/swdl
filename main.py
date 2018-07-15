@@ -17,8 +17,8 @@ wdl_parser = Lark(r"""
 
     runtime: "runtime" "{" variable_mapping* "}"
 
-    opt_declaration: type NAME ["=" expression]?
-    declaration: type NAME "=" expression
+    opt_declaration: type NAME ["=" expression]? -> decl
+    declaration: type NAME "=" expression        -> decl
 
     expression: "(" expression ")"
               | expression "." expression
@@ -40,8 +40,8 @@ wdl_parser = Lark(r"""
               | expression "!=" expression
               | expression "&&" expression
               | expression "||" expression
-              | literal
-              | NAME
+              | literal ->
+              | NAME -> name_usage
 
     type: actual_type "?"?
     actual_type: "Int"                            -> type_int
@@ -50,7 +50,7 @@ wdl_parser = Lark(r"""
                | "String"                         -> type_string
                | "File"                           -> type_file
                | "Array" "[" type "]" "+"?        -> type_array
-               | "Map" "[" type "," type "]" "+"? -> type_map
+               | "Map" "[" type "," type "]"      -> type_map
 
     literal: string
            | SIGNED_INT         -> int
@@ -93,6 +93,7 @@ from lark import Transformer
 from lark.lexer import Token
 
 class NativizeData(Transformer):
+    # TODO losing line numbers?
 
     def actual_string(self, args):
         return Token('string_part', ''.join(args))
@@ -113,13 +114,47 @@ class NativizeData(Transformer):
     true = lambda self, _: Token('bool', True)
     false = lambda self, _: Token('bool', False)
 
+import operators
+p = re.match(r'')
+for l in operators.d.split('\n'):
+    |`Boolean`|`==`|`Boolean`|`Boolean`||
+
+class TypeCheck(Transformer):
+    def __init__(self):
+        super()
+        self.names = {}
+
+    def expression(self, args):
+        print (args, self.names)
+
+    def type(self, args):
+        # TODO opt
+        return args[0].data
+
+    def decl(self, args):
+        assert args[1] not in self.names, "name used twice"
+        self.names[args[1]] = args[0]
+
+    string = lambda self, _: 'type_string'
+    int = lambda self, _: 'type_int'
+    float = lambda self, _: 'type_float'
+    true = lambda self, _: 'type_boolean'
+    false = lambda self, _: 'type_boolean'
+
+
+
 
 def main():
     import sys
     if "-t" in sys.argv:
         import tests
-        for t in tests.t:
-            print(NativizeData().transform(wdl_parser.parse(t)))
+        print(TypeCheck().transform(wdl_parser.parse(tests.t[-1])))
+        # for t in tests.t:
+            # print(NativizeData().transform(wdl_parser.parse(t)))
+            # for x in NativizeData().transform(wdl_parser.parse(t)).iter_subtrees():
+            #     print(x)
+            #     print()
+            # print()
     elif len(sys.argv) > 1:
         with open(sys.argv[1]) as f:
             print(wdl_parser.parse(f.read()).pretty())

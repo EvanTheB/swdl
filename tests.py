@@ -94,5 +94,10 @@ input {
     String x = "~abc~~~xyz"
     String x = " ~{1} abc "
 }}''',
+r'''workflow w {
+input {
+    String x = 1 + 2
+    String y = 3 + x
+}}''',
 
 ]
