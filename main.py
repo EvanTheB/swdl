@@ -15,7 +15,6 @@ wdl_parser = Lark(r"""
 
     scatter: "scatter" "(" NAME "in" expression ")" "{" workflow_block* "}"
 
-    command: "command" /<<<.*?>>>/s
     runtime: "runtime" "{" variable_mapping* "}"
 
     opt_declaration: type NAME ["=" expression]?
@@ -65,6 +64,12 @@ wdl_parser = Lark(r"""
     string_part: /[^"~]+/
         | "~{" expression "}"
         | /~(?!{)/
+
+    command: "command" "<<<" command_part* ">>>"
+    command_part: /[^>~]+/
+        | "~{" expression "}"
+        | /~(?!{)/
+        | />(?!>>)/
 
     %import common.ESCAPED_STRING
     %import common.SIGNED_NUMBER

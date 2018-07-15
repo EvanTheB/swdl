@@ -27,9 +27,11 @@ task t {
 
 # >>> with space doesnt trick
 r'''workflow w {}
-task t {
-    command <<< > >> >>>
-}''',
+task t { command <<< >>> }
+task t { command <<< > > > >>> }
+task t { command <<< > >> > >>> }
+task t { command <<< a> b>> >c >>> }
+''',
 
 # string literal trick
 r'''workflow w {
