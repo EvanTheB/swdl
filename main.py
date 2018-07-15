@@ -73,8 +73,12 @@ wdl_parser = Lark(r"""
     %import common.ESCAPED_STRING
     %import common.SIGNED_NUMBER
     %import common.CNAME -> NAME
+
     %import common.WS
     %ignore WS
+
+    COMMENT: /#.*/
+    %ignore COMMENT
 
     """, start='doc', ambiguity="explicit")
 
