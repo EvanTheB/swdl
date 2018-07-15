@@ -40,8 +40,6 @@ wdl_parser = Lark(r"""
               | expression "!=" expression
               | expression "&&" expression
               | expression "||" expression
-              | "{" ( expression ":" expression ( "," expression ":" expression )*)? "}"
-              | "[" ( expression ( "," expression )*)? "]"
               | literal
               | NAME
 
@@ -55,14 +53,17 @@ wdl_parser = Lark(r"""
                | "Map" "[" type "," type "]" "+"? -> type_map
 
     literal: string
-           | SIGNED_NUMBER      -> number
+           | SIGNED_INT         -> int
+           | SIGNED_FLOAT       -> float
            | "true"             -> true
            | "false"            -> false
+           | "{" ( expression ":" expression ( "," expression ":" expression )*)? "}" -> map_literal
+           | "[" ( expression ( "," expression )*)? "]" -> array_literal
 
     string: "\"" string_part* "\""
-    string_part: /[^"~]+/
-        | "~{" expression "}"
-        | /~(?!{)/
+    string_part: actual_string
+        | "~{" expression "}" -> string_interpolation
+    actual_string: ( /[^"~]+/ | /~+(?!{)/ )*
 
     command: "command" "<<<" command_part* ">>>"
     command_part: /[^>~]+/
@@ -71,7 +72,8 @@ wdl_parser = Lark(r"""
         | />(?!>>)/
 
     %import common.ESCAPED_STRING
-    %import common.SIGNED_NUMBER
+    %import common.SIGNED_FLOAT
+    %import common.SIGNED_INT
     %import common.CNAME -> NAME
 
     %import common.WS
@@ -80,27 +82,51 @@ wdl_parser = Lark(r"""
     COMMENT: /#.*/
     %ignore COMMENT
 
-    """, start='doc', ambiguity="explicit")
+    """,
+    start='doc',
+    ambiguity="explicit",
+    # "experimental", do Tokens have this anyway?
+    # propagate_positions=True,
+)
 
 from lark import Transformer
+from lark.lexer import Token
 
-class WDLTransformer(Transformer):
-    def string(self, v):
-        return v[0][1:-1]
-    def number(self, v):
-        return float(v[0])
+class NativizeData(Transformer):
 
-    true = lambda self, _: True
-    false = lambda self, _: False
+    def actual_string(self, args):
+        return Token('string_part', ''.join(args))
 
-#print(WDLTransformer().transform(wdl_parser.parse('13.1')))
+    def int(self, args):
+        return Token('int', int(args[0]))
 
-import sys
-if len(sys.argv) > 1:
-    with open(sys.argv[1]) as f:
-        print(wdl_parser.parse(f.read()).pretty())
-else:
-    import tests
-    for t in tests.t:
-        print(wdl_parser.parse(t).pretty())
+    def float(self, args):
+        return Token('float', float(args[0]))
 
+    # can't do these yet as args are not yet pythonised
+    # def map_literal(self, args):
+    #     return dict(args)
+
+    # def array_literal(self, args):
+    #     return tuple(args)
+
+    true = lambda self, _: Token('bool', True)
+    false = lambda self, _: Token('bool', False)
+
+
+def main():
+    import sys
+    if "-t" in sys.argv:
+        import tests
+        for t in tests.t:
+            print(NativizeData().transform(wdl_parser.parse(t)))
+    elif len(sys.argv) > 1:
+        with open(sys.argv[1]) as f:
+            print(wdl_parser.parse(f.read()).pretty())
+    else:
+        import tests
+        for t in tests.t:
+            print(wdl_parser.parse(t))
+
+if __name__ == '__main__':
+    main()

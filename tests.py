@@ -89,5 +89,10 @@ input {
     Int x = 1
     Int x = x
 }}''',
+r'''workflow w {
+input {
+    String x = "~abc~~~xyz"
+    String x = " ~{1} abc "
+}}''',
 
 ]
