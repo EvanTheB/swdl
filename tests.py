@@ -41,4 +41,53 @@ r'''workflow w {
     String x = "~{"ab~{""}c"}"
     String x = "a}bc~ { {} ~~~"
 }''',
+
+# types
+r'''workflow w {
+    input {
+        Int a
+        Float b
+        Boolean c
+        String d
+        File e
+        Array[Int] f
+        Map[String, Int] g
+        Map[Array[Float], Map[Boolean, File]] g
+    }
+}''',
+
+# expressions
+r'''workflow w {
+input {
+    Int x = (1)
+    Int x = 1.1
+    Int x = 1[1]
+    Int x = x(1)
+    Int x = x(1,1)
+    Int x = !1
+    Int x = -1
+    Int x = if 1 then 1 else 1
+    Int x = 1 * 1
+    Int x = 1 % 1
+    Int x = 1 / 1
+    Int x = 1 + 1
+    Int x = 1 - 1
+    Int x = 1 < 1
+    Int x = 1 <= 1
+    Int x = 1 > 1
+    Int x = 1 >= 1
+    Int x = 1 == 1
+    Int x = 1 != 1
+    Int x = 1 && 1
+    Int x = 1 || 1
+    Int x = {}
+    Int x = {1:1}
+    Int x = {1:1, 1:1}
+    Int x = []
+    Int x = [1]
+    Int x = [1,1]
+    Int x = 1
+    Int x = x
+}}''',
+
 ]

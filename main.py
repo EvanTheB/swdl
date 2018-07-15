@@ -23,9 +23,8 @@ wdl_parser = Lark(r"""
     expression: "(" expression ")"
               | expression "." expression
               | expression "[" expression "]"
-              | expression "(" (expression ( "," expression )*)? ")"
+              | NAME "(" (expression ( "," expression )*)? ")"
               | "!" expression
-              | "+" expression
               | "-" expression
               | "if" expression "then" expression "else" expression
               | expression "*" expression
