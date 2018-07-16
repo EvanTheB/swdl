@@ -138,13 +138,21 @@ op_map = {
     "&&": "and_",
     "||": "or_",
 }
+type_map = {
+    "Int" : "type_int",
+    "Float" : "type_float",
+    "Boolean" : "type_boolean",
+    "String" : "type_string",
+    "File" : "type_file",
+}
 
 
 import operators
 for l in operators.d.split('\n'):
     m = re_op.match(l)
     assert m, "operator fail: " + l
-    valid_operators[op_map[m.group(2)]][m.group(1,3)] = m.group(4)
+    valid_operators[op_map[m.group(2)]][tuple(type_map[x] for x in m.group(1,3))] = type_map[m.group(4)]
+assert len(valid_operators) == len(op_map), "some operators not defined"
 
 class TypeCheck(Transformer):
     def __init__(self):
@@ -153,21 +161,34 @@ class TypeCheck(Transformer):
         for operator in valid_operators:
             # http://stackoverflow.com/questions/1015307/python-bind-an-unbound-method#comment8431145_1015405
             # https://gist.github.com/hangtwenty/a928b801ca5c7705e94e
-            f = lambda _, args: valid_operators[operator][args[0], args[1]]
+            def f(self, args, op=operator):
+                print(op, args, valid_operators[op][args[0], args[1]])
+                return valid_operators[op][args[0], args[1]]
+
             setattr(self, operator,
                 f.__get__(self, self.__class__)
             )
 
     def expression(self, args):
-        print (args, self.names)
+        print ("e", args)
+        return args[0]
+
+    def name_usage(self, args):
+        print ("n", args)
+        assert args[0] in self.names, "name used before declared {}".format(args[0])
+        return self.names[args[0]]
 
     def type(self, args):
         # TODO opt
+        print ("t", args)
         return args[0].data
 
     def decl(self, args):
-        assert args[1] not in self.names, "name used twice"
+        print("d", args)
+        assert args[1] not in self.names, "name declared twice {}".format(args[1])
         self.names[args[1]] = args[0]
+        if len(args) > 2:
+            assert args[0] == args[2], "wrong type in declaration {}, {}".format(args[0], args[2])
 
     string = lambda self, _: 'type_string'
     int = lambda self, _: 'type_int'

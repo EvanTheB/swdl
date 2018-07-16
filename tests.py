@@ -96,7 +96,7 @@ input {
 }}''',
 r'''workflow w {
 input {
-    String x = 1 + 2
+    Int x = 1 + 2
     String y = 3 + x
 }}''',
 
