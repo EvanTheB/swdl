@@ -20,27 +20,27 @@ wdl_parser = Lark(r"""
     opt_declaration: type NAME ["=" expression]? -> decl
     declaration: type NAME "=" expression        -> decl
 
-    expression: "(" expression ")"
-              | expression "." expression
-              | expression "[" expression "]"
-              | NAME "(" (expression ( "," expression )*)? ")"
-              | "!" expression
-              | "-" expression
-              | "if" expression "then" expression "else" expression
-              | expression "*" expression
-              | expression "%" expression
-              | expression "/" expression
-              | expression "+" expression
-              | expression "-" expression
-              | expression "<" expression
-              | expression "<=" expression
-              | expression ">" expression
-              | expression ">=" expression
-              | expression "==" expression
-              | expression "!=" expression
-              | expression "&&" expression
-              | expression "||" expression
-              | literal ->
+    expression: "(" expression ")"                                  -> paren
+              | expression "." expression                           -> selection
+              | expression "[" expression "]"                       -> getitem
+              | NAME "(" (expression ( "," expression )*)? ")"      -> func
+              | "!" expression             -> not_
+              | "-" expression             -> neg
+              | "if" expression "then" expression "else" expression -> ternary
+              | expression "*" expression  -> mul
+              | expression "%" expression  -> mod
+              | expression "/" expression  -> truediv
+              | expression "+" expression  -> add
+              | expression "-" expression  -> sub
+              | expression "<" expression  -> lt
+              | expression "<=" expression -> le
+              | expression ">" expression  -> gt
+              | expression ">=" expression -> ge
+              | expression "==" expression -> eq
+              | expression "!=" expression -> ne
+              | expression "&&" expression -> and_
+              | expression "||" expression -> or_
+              | literal
               | NAME -> name_usage
 
     type: actual_type "?"?
@@ -114,15 +114,49 @@ class NativizeData(Transformer):
     true = lambda self, _: Token('bool', True)
     false = lambda self, _: Token('bool', False)
 
+import re
+re_op = re.compile(r'\|`(\w*)`\|`(.*)`\|`(\w*)`\|`(\w*)`\|.*\|')
+
+import collections
+# op -> (l,r) -> result
+valid_operators = collections.defaultdict(dict)
+op_map = {
+    # "!": "not",
+    # "-": "neg",
+    # "": "ternary",
+    "*": "mul",
+    "%": "mod",
+    "/": "truediv",
+    "+": "add",
+    "-": "sub",
+    "<": "lt",
+    "<=": "le",
+    ">": "gt",
+    ">=": "ge",
+    "==": "eq",
+    "!=": "ne",
+    "&&": "and_",
+    "||": "or_",
+}
+
+
 import operators
-p = re.match(r'')
 for l in operators.d.split('\n'):
-    |`Boolean`|`==`|`Boolean`|`Boolean`||
+    m = re_op.match(l)
+    assert m, "operator fail: " + l
+    valid_operators[op_map[m.group(2)]][m.group(1,3)] = m.group(4)
 
 class TypeCheck(Transformer):
     def __init__(self):
         super()
         self.names = {}
+        for operator in valid_operators:
+            # http://stackoverflow.com/questions/1015307/python-bind-an-unbound-method#comment8431145_1015405
+            # https://gist.github.com/hangtwenty/a928b801ca5c7705e94e
+            f = lambda _, args: valid_operators[operator][args[0], args[1]]
+            setattr(self, operator,
+                f.__get__(self, self.__class__)
+            )
 
     def expression(self, args):
         print (args, self.names)
@@ -140,9 +174,6 @@ class TypeCheck(Transformer):
     float = lambda self, _: 'type_float'
     true = lambda self, _: 'type_boolean'
     false = lambda self, _: 'type_boolean'
-
-
-
 
 def main():
     import sys
