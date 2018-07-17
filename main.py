@@ -193,6 +193,10 @@ class TypeCheck(Transformer):
             assert args[0] == args[2], "wrong type in declaration {}, {}".format(args[0], args[2])
         return args[0]
 
+    def string_interpolation(self, args):
+        print ("si", args)
+        assert args[0] == 'type_string', "string interpolation must evatuate to string"
+
     string = lambda self, _: 'type_string'
     int = lambda self, _: 'type_int'
     float = lambda self, _: 'type_float'
@@ -201,22 +205,25 @@ class TypeCheck(Transformer):
 
 def main():
     import sys
-    if "-t" in sys.argv:
-        import tests
-        print(TypeCheck().transform(wdl_parser.parse(tests.t[-1])))
-        # for t in tests.t:
-            # print(NativizeData().transform(wdl_parser.parse(t)))
-            # for x in NativizeData().transform(wdl_parser.parse(t)).iter_subtrees():
-            #     print(x)
-            #     print()
-            # print()
-    elif len(sys.argv) > 1:
-        with open(sys.argv[1]) as f:
-            print(wdl_parser.parse(f.read()).pretty())
+    filenames = [f for f in sys.argv[1:] if f[0] != '-']
+    if any(filenames):
+        testcases = []
+        for f in filenames:
+            with open(f) as fd:
+                testcases.append(fd.read())
     else:
         import tests
-        for t in tests.t:
-            print(wdl_parser.parse(t))
+        testcases = tests.t
+
+    for t in testcases:
+        wdl_parser.parse(t)
+
+    if "-t" in sys.argv:
+        for t in testcases:
+            NativizeData().transform(wdl_parser.parse(t))
+    if "-p" in sys.argv:
+        for t in testcases:
+            TypeCheck().transform(wdl_parser.parse(t))
 
 if __name__ == '__main__':
     main()

@@ -103,6 +103,6 @@ input {
 }}''',
 r'''workflow w {
 input {
-    String a = "~{"a"}"
+    String a = "~{"a" + 1}"
 }}''',
 ]
