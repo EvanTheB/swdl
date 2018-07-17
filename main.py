@@ -52,7 +52,7 @@ wdl_parser = Lark(r"""
                | "Array" "[" type "]" "+"?        -> type_array
                | "Map" "[" type "," type "]"      -> type_map
 
-    literal: string
+    literal: string             -> string
            | SIGNED_INT         -> int
            | SIGNED_FLOAT       -> float
            | "true"             -> true
@@ -162,6 +162,8 @@ class TypeCheck(Transformer):
             # http://stackoverflow.com/questions/1015307/python-bind-an-unbound-method#comment8431145_1015405
             # https://gist.github.com/hangtwenty/a928b801ca5c7705e94e
             def f(self, args, op=operator):
+                assert op in valid_operators, "this should never happen"
+                assert (args[0], args[1]) in valid_operators[op], "Operation not defined for types: {} {} {}".format(args[0], op, args[1])
                 print(op, args, valid_operators[op][args[0], args[1]])
                 return valid_operators[op][args[0], args[1]]
 
@@ -189,6 +191,7 @@ class TypeCheck(Transformer):
         self.names[args[1]] = args[0]
         if len(args) > 2:
             assert args[0] == args[2], "wrong type in declaration {}, {}".format(args[0], args[2])
+        return args[0]
 
     string = lambda self, _: 'type_string'
     int = lambda self, _: 'type_int'

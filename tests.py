@@ -97,7 +97,12 @@ input {
 r'''workflow w {
 input {
     Int x = 1 + 2
-    String y = 3 + x
+    Int y = 1 + x
+    String a = "3" + "4"
+    String b = a + "5"
 }}''',
-
+r'''workflow w {
+input {
+    String a = "~{"a"}"
+}}''',
 ]
